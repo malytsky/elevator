@@ -29,6 +29,7 @@ export class Elevator extends PIXI.Container {
             .stroke({ color: 0x333333, width: 1 });
     }
 
+
     public async moveToFloor(floor: number): Promise<void> {
         console.log(`Elevator: moving from ${this.currentFloor} to ${floor}`);
         if (this.currentFloor === floor) {
@@ -42,8 +43,6 @@ export class Elevator extends PIXI.Container {
         const distance = Math.abs(this.currentFloor - floor);
         const duration = distance * CONFIG.ELEVATOR_SPEED;
 
-        console.log(`Elevator: startY=${startY}, targetY=${targetY}, duration=${duration}ms`);
-
         return new Promise((resolve) => {
             let elapsedTime = 0;
 
@@ -52,6 +51,9 @@ export class Elevator extends PIXI.Container {
                 const progress = Math.min(elapsedTime / duration, 1);
 
                 this.position.y = startY + (targetY - startY) * progress;
+
+                // Обновляем позиции пассажиров каждый кадр, пока лифт движется
+                this.updatePassengersPosition();
 
                 console.log(`Elevator animating: ${(progress * 100).toFixed(1)}%, Y=${this.position.y.toFixed(1)}`);
 
@@ -72,7 +74,7 @@ export class Elevator extends PIXI.Container {
     public addPassenger(person: Person): boolean {
         if (this.passengers.length < CONFIG.ELEVATOR_CAPACITY) {
             this.passengers.push(person);
-            this.addChild(person);
+            // НЕ меняем родителя! Пассажир остаётся в waitingArea
             this.updatePassengersPosition();
             return true;
         }
@@ -82,28 +84,27 @@ export class Elevator extends PIXI.Container {
     public removePassengersToFloor(floor: number): Person[] {
         const leaving = this.passengers.filter(p => p.targetFloor === floor);
         this.passengers = this.passengers.filter(p => p.targetFloor !== floor);
-        leaving.forEach(p => this.removeChild(p));
+        // Пассажиры уже в waitingArea, ничего не удаляем
         this.updatePassengersPosition();
         return leaving;
     }
 
     private updatePassengersPosition() {
-        const elevatorInnerWidth = CONFIG.ELEVATOR_WIDTH - 10; // Отступ от края
-        const elevatorInnerHeight = CONFIG.FLOOR_HEIGHT - 20; // Отступ сверху и снизу
         const padding = 5;
 
         this.passengers.forEach((p, index) => {
-            // Располагаем пассажиров в два столбца (по 2 человека в ширину)
-            const col = index % 2; // 0 или 1 (левый или правый столбец)
-            const row = Math.floor(index / 2); // 0, 1, 2... (ряд сверху)
+            const col = index % 2;
+            const row = Math.floor(index / 2);
 
-            // X позиция: распределяем по ширине лифта
+            // Позиция ВНУТРИ лифта (локальные координаты лифта)
             const x = padding + col * (CONFIG.PERSON_SIZE + 2);
-
-            // Y позиция: распределяем по высоте, чтобы все влезли
             const y = padding + row * (CONFIG.PERSON_SIZE + 2);
 
-            p.position.set(x, y);
+            // Переводим в мировые координаты лифта
+            const worldX = this.position.x + x;
+            const worldY = this.position.y + y;
+
+            p.position.set(worldX, worldY);
         });
     }
 

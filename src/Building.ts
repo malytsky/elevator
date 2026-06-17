@@ -108,18 +108,23 @@ export class Building extends PIXI.Container {
         const queueIndex = (currentQueue?.length ?? 1) - 1;
         const targetQueueX = 20 + CONFIG.ELEVATOR_WIDTH + 10 + queueIndex * (CONFIG.PERSON_SIZE + 5);
 
-        // Человек идет в конец очереди
-        const walkPromise = person.moveTo(targetQueueX, CONFIG.WALK_SPEED);
-        const timeoutPromise = new Promise(r => setTimeout(r, CONFIG.WALK_SPEED + 2000));
-
-        await Promise.race([walkPromise, timeoutPromise]);
+        // Человек идет в конец очереди БЕЗ срока давности
+        await person.moveTo(targetQueueX, CONFIG.WALK_SPEED);
 
         console.log(`Person at floor ${floor} reached queue position ${queueIndex}`);
+        
+        // После достижения позиции, обновляем позиции ОСТАЛЬНЫХ людей в очереди
+        this.updateQueuePositions(floor);
     }
 
     private updateQueuePositions(floor: number) {
         const queue = this.floorQueues.get(floor) || [];
         queue.forEach((p, index) => {
+            // ПРОПУСКАЕМ людей, которые сейчас анимируются
+            if (p.isAnimating) {
+                return;
+            }
+
             const targetX = 20 + CONFIG.ELEVATOR_WIDTH + 10 + index * (CONFIG.PERSON_SIZE + 5);
 
             // Анимируем сдвиг очереди
@@ -177,6 +182,8 @@ export class Building extends PIXI.Container {
     private findNextStop(): number | null {
         const currentFloor = this.elevator.currentFloor;
         const currentDir = this.elevator.direction;
+
+        console.log(`findNextStop: currentFloor=${currentFloor}, direction=${currentDir}, passengers=${this.elevator.passengers.length}`);
 
         // Если в лифте есть пассажиры, едим до их целей И собираем людей в пути
         if (this.elevator.passengers.length > 0) {
@@ -291,8 +298,8 @@ export class Building extends PIXI.Container {
         // 1. Вивантаження пасажирів
         const leaving = this.elevator.removePassengersToFloor(floor);
         for (const person of leaving) {
-            this.addChild(person);
-            person.position.set(20 + CONFIG.ELEVATOR_WIDTH + 5, (CONFIG.FLOORS - floor) * CONFIG.FLOOR_HEIGHT + 20);
+            const floorY = (CONFIG.FLOORS - floor) * CONFIG.FLOOR_HEIGHT + 20;
+            person.position.set(20 + CONFIG.ELEVATOR_WIDTH + 5, floorY);
             person.walkAway(CONFIG.BUILDING_WIDTH);
         }
 
@@ -309,31 +316,38 @@ export class Building extends PIXI.Container {
         const boarding: Person[] = [];
 
         for (let i = 0; i < currentQueue.length; i++) {
-            // Проверяем, есть ли свободное место в лифте
             if (this.elevator.passengers.length + boarding.length >= CONFIG.ELEVATOR_CAPACITY) {
                 break;
             }
 
             const person = currentQueue[i];
 
-            if (this.elevator.direction === null) {
-                this.elevator.direction = person.direction;
-            }
-
-            // Берём только тех, кому в ту же сторону
-            if (person.direction === this.elevator.direction) {
+            // ТОЛЬКО берём людей, которые НЕ анимируются (уже достигли очереди)
+            if (!person.isAnimating && person.direction === this.elevator.direction) {
                 boarding.push(person);
                 currentQueue.splice(i, 1);
                 i--;
             }
         }
 
-        // Сначала обновляем позиции оставшихся людей в очереди
+        // Обновляем позиции оставшихся людей в очереди
         this.updateQueuePositions(floor);
 
-        // Потом добавляем людей в лифт
+        // Добавляем людей в лифт
         for (const person of boarding) {
+            // Сохраняем мировую позицию
+            const globalPos = this.waitingArea.toGlobal(person.position);
+
+            // Удаляем из waitingArea
             this.waitingArea.removeChild(person);
+
+            // Добавляем в Building (над лифтом в Z-order)
+            this.addChild(person);
+
+            // Восстанавливаем позицию в новой системе координат
+            person.position.set(globalPos.x, globalPos.y);
+
+            // Добавляем в логический список лифта
             this.elevator.addPassenger(person);
         }
 
