@@ -31,9 +31,7 @@ export class Elevator extends PIXI.Container {
 
 
     public async moveToFloor(floor: number): Promise<void> {
-        console.log(`Elevator: moving from ${this.currentFloor} to ${floor}`);
         if (this.currentFloor === floor) {
-            console.log(`Elevator: already at floor ${floor}`);
             return;
         }
 
@@ -55,14 +53,11 @@ export class Elevator extends PIXI.Container {
                 // Обновляем позиции пассажиров каждый кадр, пока лифт движется
                 this.updatePassengersPosition();
 
-                console.log(`Elevator animating: ${(progress * 100).toFixed(1)}%, Y=${this.position.y.toFixed(1)}`);
-
                 if (progress >= 1) {
                     this.position.y = targetY;
                     this.currentFloor = floor;
                     this.isMoving = false;
                     PIXI.Ticker.shared.remove(animate);
-                    console.log(`Elevator: reached floor ${floor}`);
                     resolve();
                 }
             };

@@ -81,7 +81,6 @@ export class Building extends PIXI.Container {
 
     private async createPerson(floor: number) {
         if (floor < 1 || floor > CONFIG.FLOORS) {
-            console.error(`Invalid floor for person: ${floor}`);
             return;
         }
         let targetFloor;
@@ -89,7 +88,6 @@ export class Building extends PIXI.Container {
             targetFloor = Math.floor(Math.random() * CONFIG.FLOORS) + 1;
         } while (targetFloor === floor);
 
-        console.log(`Creating person at floor ${floor} going to ${targetFloor}`);
         const person = new Person(floor, targetFloor);
 
         // Начальная позиция за пределами здания (справа)
@@ -102,16 +100,12 @@ export class Building extends PIXI.Container {
             currentQueue.push(person);
         }
 
-        console.log(`Person at floor ${floor} walking to queue end. Initial X: ${person.x}`);
-
         // Вычисляем позицию в конце очереди
         const queueIndex = (currentQueue?.length ?? 1) - 1;
         const targetQueueX = 20 + CONFIG.ELEVATOR_WIDTH + 10 + queueIndex * (CONFIG.PERSON_SIZE + 5);
 
-        // Человек идет в конец очереди БЕЗ срока давности
+        // Человек идет в конец очереди
         await person.moveTo(targetQueueX, CONFIG.WALK_SPEED);
-
-        console.log(`Person at floor ${floor} reached queue position ${queueIndex}`);
         
         // После достижения позиции, обновляем позиции ОСТАЛЬНЫХ людей в очереди
         this.updateQueuePositions(floor);
@@ -152,8 +146,6 @@ export class Building extends PIXI.Container {
         if (this.isLogicRunning) return;
         this.isLogicRunning = true;
 
-        console.log("Elevator logic started");
-
         const loop = async () => {
             while (true) {
                 let nextStop = this.findNextStop();
@@ -163,9 +155,7 @@ export class Building extends PIXI.Container {
                     nextStop = this.findNextStop();
                 }
 
-                console.log("Elevator logic iteration. Next stop:", nextStop, "Current floor:", this.elevator.currentFloor, "Passengers:", this.elevator.passengers.length);
                 if (nextStop !== null) {
-                    console.log("Moving to floor:", nextStop);
                     await this.elevator.moveToFloor(nextStop);
                     await this.handleFloorStop(nextStop);
                 } else {
@@ -174,7 +164,6 @@ export class Building extends PIXI.Container {
             }
         };
 
-        // Запускаем асинхронный цикл без await (не блокируем конструктор)
         loop();
     }
 
@@ -182,8 +171,6 @@ export class Building extends PIXI.Container {
     private findNextStop(): number | null {
         const currentFloor = this.elevator.currentFloor;
         const currentDir = this.elevator.direction;
-
-        console.log(`findNextStop: currentFloor=${currentFloor}, direction=${currentDir}, passengers=${this.elevator.passengers.length}`);
 
         // Если в лифте есть пассажиры, едим до их целей И собираем людей в пути
         if (this.elevator.passengers.length > 0) {
@@ -252,7 +239,6 @@ export class Building extends PIXI.Container {
             });
 
             if (floorsWithPeople.length === 0) {
-                console.log("No floors with people found.");
                 this.elevator.direction = null;
                 return null;
             }
@@ -287,7 +273,6 @@ export class Building extends PIXI.Container {
             }
         }
 
-        console.log("Elevator has no space left.");
         return null;
     }
 

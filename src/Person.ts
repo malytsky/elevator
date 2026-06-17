@@ -14,7 +14,6 @@ export class Person extends PIXI.Container {
     private text: PIXI.Text;
     private activeAnimation: ((ticker: PIXI.Ticker) => void) | null = null;
     public isInElevator: boolean = false;
-    public elevatorRef: any = null;
     public isAnimating: boolean = false;
 
     constructor(currentFloor: number, targetFloor: number) {
@@ -46,8 +45,15 @@ export class Person extends PIXI.Container {
         this.addChild(this.text);
     }
 
+    private stopCurrentAnimation() {
+        if (this.activeAnimation) {
+            PIXI.Ticker.shared.remove(this.activeAnimation);
+            this.activeAnimation = null;
+        }
+    }
+
     public walkToElevator(elevatorX: number): Promise<void> {
-        console.log(`Person at floor ${this.currentFloor}: starting walk to elevator`);
+        this.stopCurrentAnimation();
         this.isAnimating = true;
         return new Promise((resolve) => {
             const targetX = elevatorX + CONFIG.ELEVATOR_WIDTH / 2;
@@ -63,23 +69,19 @@ export class Person extends PIXI.Container {
 
                 if (progress >= 1) {
                     this.position.x = targetX;
-                    PIXI.Ticker.shared.remove(animate);
-                    this.activeAnimation = null;
+                    this.stopCurrentAnimation();
                     this.isAnimating = false;
-                    console.log(`Person at floor ${this.currentFloor}: reached elevator`);
                     resolve();
                 }
             };
 
-            if (this.activeAnimation) {
-                PIXI.Ticker.shared.remove(this.activeAnimation);
-            }
             this.activeAnimation = animate;
             PIXI.Ticker.shared.add(animate);
         });
     }
 
     public walkAway(targetX: number): Promise<void> {
+        this.stopCurrentAnimation();
         return new Promise((resolve) => {
             const startX = this.x;
             const duration = CONFIG.WALK_SPEED;
@@ -94,21 +96,18 @@ export class Person extends PIXI.Container {
                 if (progress >= 1) {
                     this.position.x = targetX;
                     this.visible = false;
-                    PIXI.Ticker.shared.remove(animate);
-                    this.activeAnimation = null;
+                    this.stopCurrentAnimation();
                     resolve();
                 }
             };
 
-            if (this.activeAnimation) {
-                PIXI.Ticker.shared.remove(this.activeAnimation);
-            }
             this.activeAnimation = animate;
             PIXI.Ticker.shared.add(animate);
         });
     }
 
     public moveTo(targetX: number, duration: number = CONFIG.WALK_SPEED): Promise<void> {
+        this.stopCurrentAnimation();
         this.isAnimating = true;
         return new Promise((resolve) => {
             const startX = this.x;
@@ -122,16 +121,12 @@ export class Person extends PIXI.Container {
 
                 if (progress >= 1) {
                     this.position.x = targetX;
-                    PIXI.Ticker.shared.remove(animate);
-                    this.activeAnimation = null;
+                    this.stopCurrentAnimation();
                     this.isAnimating = false;
                     resolve();
                 }
             };
 
-            if (this.activeAnimation) {
-                PIXI.Ticker.shared.remove(this.activeAnimation);
-            }
             this.activeAnimation = animate;
             PIXI.Ticker.shared.add(animate);
         });
