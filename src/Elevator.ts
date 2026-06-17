@@ -103,10 +103,6 @@ export class Elevator extends PIXI.Container {
         });
     }
 
-    public get isFull(): boolean {
-        return this.passengers.length >= CONFIG.ELEVATOR_CAPACITY;
-    }
-
     public get spaceLeft(): number {
         return CONFIG.ELEVATOR_CAPACITY - this.passengers.length;
     }

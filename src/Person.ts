@@ -13,7 +13,6 @@ export class Person extends PIXI.Container {
     private graphics: PIXI.Graphics;
     private text: PIXI.Text;
     private activeAnimation: ((ticker: PIXI.Ticker) => void) | null = null;
-    public isInElevator: boolean = false;
     public isAnimating: boolean = false;
 
     constructor(currentFloor: number, targetFloor: number) {
@@ -50,34 +49,6 @@ export class Person extends PIXI.Container {
             PIXI.Ticker.shared.remove(this.activeAnimation);
             this.activeAnimation = null;
         }
-    }
-
-    public walkToElevator(elevatorX: number): Promise<void> {
-        this.stopCurrentAnimation();
-        this.isAnimating = true;
-        return new Promise((resolve) => {
-            const targetX = elevatorX + CONFIG.ELEVATOR_WIDTH / 2;
-            const duration = CONFIG.WALK_SPEED;
-            let elapsedTime = 0;
-            const startX = this.x;
-
-            const animate = (ticker: PIXI.Ticker) => {
-                elapsedTime += ticker.deltaMS;
-                const progress = Math.min(elapsedTime / duration, 1);
-
-                this.position.x = startX + (targetX - startX) * progress;
-
-                if (progress >= 1) {
-                    this.position.x = targetX;
-                    this.stopCurrentAnimation();
-                    this.isAnimating = false;
-                    resolve();
-                }
-            };
-
-            this.activeAnimation = animate;
-            PIXI.Ticker.shared.add(animate);
-        });
     }
 
     public walkAway(targetX: number): Promise<void> {

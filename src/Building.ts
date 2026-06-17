@@ -4,7 +4,6 @@ import { Elevator } from './Elevator';
 import { Person, Direction } from './Person';
 
 export class Building extends PIXI.Container {
-    private floors: PIXI.Graphics[] = [];
     private elevator: Elevator;
     private floorQueues: Map<number, Person[]> = new Map();
     private waitingArea: PIXI.Container;
