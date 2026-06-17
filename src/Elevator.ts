@@ -20,7 +20,7 @@ export class Elevator extends PIXI.Container {
         this.graphics.clear();
         this.graphics
             .rect(0, 0, CONFIG.ELEVATOR_WIDTH, CONFIG.FLOOR_HEIGHT - 10)
-            .fill(0xCCCCCC)
+            .fill(0xFFFFFF)  // Белый цвет вместо серого
             .stroke({ color: 0x000000, width: 3 });
 
         this.graphics
@@ -88,8 +88,22 @@ export class Elevator extends PIXI.Container {
     }
 
     private updatePassengersPosition() {
+        const elevatorInnerWidth = CONFIG.ELEVATOR_WIDTH - 10; // Отступ от края
+        const elevatorInnerHeight = CONFIG.FLOOR_HEIGHT - 20; // Отступ сверху и снизу
+        const padding = 5;
+
         this.passengers.forEach((p, index) => {
-            p.position.set(5 + index * (CONFIG.PERSON_SIZE + 2), (CONFIG.FLOOR_HEIGHT - 10 - CONFIG.PERSON_SIZE) / 2);
+            // Располагаем пассажиров в два столбца (по 2 человека в ширину)
+            const col = index % 2; // 0 или 1 (левый или правый столбец)
+            const row = Math.floor(index / 2); // 0, 1, 2... (ряд сверху)
+
+            // X позиция: распределяем по ширине лифта
+            const x = padding + col * (CONFIG.PERSON_SIZE + 2);
+
+            // Y позиция: распределяем по высоте, чтобы все влезли
+            const y = padding + row * (CONFIG.PERSON_SIZE + 2);
+
+            p.position.set(x, y);
         });
     }
 

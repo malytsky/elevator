@@ -91,4 +91,26 @@ export class Person extends PIXI.Container {
             PIXI.Ticker.shared.add(animate);
         });
     }
+
+    public moveTo(targetX: number, duration: number = CONFIG.WALK_SPEED): Promise<void> {
+        return new Promise((resolve) => {
+            const startX = this.x;
+            let elapsedTime = 0;
+
+            const animate = (ticker: PIXI.Ticker) => {
+                elapsedTime += ticker.deltaMS;
+                const progress = Math.min(elapsedTime / duration, 1);
+
+                this.position.x = startX + (targetX - startX) * progress;
+
+                if (progress >= 1) {
+                    this.position.x = targetX;
+                    PIXI.Ticker.shared.remove(animate);
+                    resolve();
+                }
+            };
+
+            PIXI.Ticker.shared.add(animate);
+        });
+    }
 }
