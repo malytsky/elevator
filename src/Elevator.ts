@@ -7,7 +7,6 @@ export class Elevator extends PIXI.Container {
     public passengers: Person[] = [];
     public direction: Direction | null = null;
     private graphics: PIXI.Graphics;
-    private isMoving: boolean = false;
 
     constructor() {
         super();
@@ -20,7 +19,7 @@ export class Elevator extends PIXI.Container {
         this.graphics.clear();
         this.graphics
             .rect(0, 0, CONFIG.ELEVATOR_WIDTH, CONFIG.FLOOR_HEIGHT - 10)
-            .fill(0xFFFFFF)  // Белый цвет вместо серого
+            .fill(0xFFFFFF)
             .stroke({ color: 0x000000, width: 3 });
 
         this.graphics
@@ -35,7 +34,6 @@ export class Elevator extends PIXI.Container {
             return;
         }
 
-        this.isMoving = true;
         const targetY = (CONFIG.FLOORS - floor) * CONFIG.FLOOR_HEIGHT + 5;
         const startY = this.position.y;
         const distance = Math.abs(this.currentFloor - floor);
@@ -56,7 +54,6 @@ export class Elevator extends PIXI.Container {
                 if (progress >= 1) {
                     this.position.y = targetY;
                     this.currentFloor = floor;
-                    this.isMoving = false;
                     PIXI.Ticker.shared.remove(animate);
                     resolve();
                 }
@@ -91,7 +88,7 @@ export class Elevator extends PIXI.Container {
             const col = index % 2;
             const row = Math.floor(index / 2);
 
-            // Позиция ВНУТРИ лифта (локальные координаты лифта)
+            // располагаем пассажиров, чтобы визуально все поместились в лифте
             const x = padding + col * (CONFIG.PERSON_SIZE + 2);
             const y = padding + row * (CONFIG.PERSON_SIZE + 2);
 
